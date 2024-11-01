@@ -1,3 +1,0 @@
-/home/zzy/SensorsCalibration/TargetCalibration/build/CMakeFiles/calib.dir
-/home/zzy/SensorsCalibration/TargetCalibration/build/CMakeFiles/edit_cache.dir
-/home/zzy/SensorsCalibration/TargetCalibration/build/CMakeFiles/rebuild_cache.dir
