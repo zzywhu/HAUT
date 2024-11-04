@@ -17,9 +17,18 @@
 #include <pcl/sample_consensus/sac_model_plane.h>
 #include <pcl/search/kdtree.h>
 #include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <opencv2/core.hpp>
+#include <vector>
 #include <sstream>
 #include <stdio.h>
 #include <string>
+#include <omp.h>
 #include <time.h>
 #include <unordered_map>
 #include <pcl/point_types.h>
@@ -38,6 +47,8 @@
 ////////////////////////////////////////////////////////global param
 extern int IterNum;
 extern int dataProcessingNum;
+extern std::vector<cv::Point2d> cluster2d;
+extern std::vector<cv::Point3d> cluster3d;
 ////////////////////////////////////////////////////////
 std::default_random_engine generator;
 cv::Vec3b randomRGBColor()
@@ -57,9 +68,9 @@ void saveRGBPointCloud(std::string name, pcl::PointCloud<pcl::PointXYZRGB>::Ptr&
     pcl::io::savePCDFileASCII(name, *pc);
 }
 
-void FitPlaneSVD(Plane& single_plane)//用整体点云直接提平面，可能会遗留后患！！！
+void FitPlaneSVD(Plane& single_plane)//????????????????棬????????????????
 {
-    // 1、计算质心	// 2、去质心
+    // 1??????????	// 2???????
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_buf(new pcl::PointCloud<pcl::PointXYZ>());
     pcl::copyPointCloud(single_plane.cloud, *cloud_buf);
     Eigen::MatrixXf cloudMat = cloud_buf->getMatrixXfMap(3, 4, 0);
@@ -220,7 +231,7 @@ public:
         const float voxel_size,
         std::unordered_map<VOXEL_LOC, Voxel*>& voxel_map);
 
-    void LiDAREdgeExtraction(const std::unordered_map<VOXEL_LOC, Voxel*>& voxel_map, const float ransac_dis_thre, const int plane_size_threshold,
+    void LiDAREdgeExtraction(const std::string& calib_config_file, const std::unordered_map<VOXEL_LOC, Voxel*>& voxel_map, const float ransac_dis_thre, const int plane_size_threshold,
         pcl::PointCloud<pcl::PointXYZI>::Ptr& lidar_line_cloud_3d);
 
     void calcDirection(const std::vector<Eigen::Vector2d>& points, Eigen::Vector2d& direction);
@@ -230,8 +241,15 @@ public:
 
     void calcCovarance(const Vector6d& extrinsic_params, const VPnPData& vpnp_point, const float pixel_inc,
         const float range_inc, const float degree_inc, Eigen::Matrix2f& covarance);
+    
+    void addinitial3d(pcl::PointCloud<pcl::PointXYZI>::Ptr& lidar_line_cloud_3d);
 
-    // 相机内参
+    void addinitial2d();
+
+    void calinitialguess(const std::string& calib_config_file);
+
+    // ??????
+
     float fx_, fy_, cx_, cy_, k1_, k2_, p1_, p2_, k3_, s_;
     int width_, height_;
     cv::Mat camera_matrix_;
@@ -254,23 +272,23 @@ public:
     cv::Mat rgb_image_;
     cv::Mat image_;
     cv::Mat grey_image_;
-    // 裁剪后的灰度图像
+    // ?ü?????????
     cv::Mat cut_grey_image_;
 
-    // 初始旋转矩阵
+    // ??????????
     Eigen::Matrix3d init_rotation_matrix_;
-    // 初始平移向量
+    // ??????????
     Eigen::Vector3d init_translation_vector_;
 
-    // 存储从pcd/bag处获取的原始点云
+    // ?洢??pcd/bag?????????????
     pcl::PointCloud<pcl::PointXYZI>::Ptr raw_lidar_cloud_;
 
-    // 存储平面交接点云
+    // ?洢??潻?????
     pcl::PointCloud<pcl::PointXYZI>::Ptr plane_line_cloud_;
     std::vector<int> plane_line_number_;
-    // 存储RGB图像边缘点的2D点云
+    // ?洢RGB????????2D????
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb_egde_cloud_;
-    // 存储LiDAR Depth/Intensity图像边缘点的2D点云
+    // ?洢LiDAR Depth/Intensity????????2D????
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr lidar_edge_cloud_;
 };
 void ConvertRGB2GRAY(const cv::Mat& image, cv::Mat& imageGray)
@@ -279,12 +297,12 @@ void ConvertRGB2GRAY(const cv::Mat& image, cv::Mat& imageGray)
     {
         return;
     }
-    //创建一张单通道的灰度图像
+    //??????????????????
     imageGray = cv::Mat::zeros(image.size(), CV_8UC1);
-    //取出存储图像像素的数组的指针
+    //????洢????????????????
     uchar* pointImage = image.data;
     uchar* pointImageGray = imageGray.data;
-    //取出图像每行所占的字节数
+    //???????????????????
     size_t stepImage = image.step;
     size_t stepImageGray = imageGray.step;
 
@@ -293,7 +311,7 @@ void ConvertRGB2GRAY(const cv::Mat& image, cv::Mat& imageGray)
     {
         for (int j = 0; j < imageGray.cols; j++)
         {
-            //opencv的通道顺序是BGR，而不是我们常说的RGB顺序
+            //opencv??????????BGR????????????????RGB???
             if (pointImage[i * stepImage + 3 * j] > pointImage[i * stepImage + 3 * j + 1] && pointImage[i * stepImage + 3 * j] > pointImage[i * stepImage + 3 * j + 2])
             {
                 pointImageGray[i * stepImageGray + j] = 255;
@@ -328,9 +346,9 @@ Calibration::Calibration(const std::string& image_file,
     p2_ = dist_coeffs[3];
     k3_ = dist_coeffs[4];*/
     int isdist;
-    string configfile2= "param\\config_multi.yaml";
+    string configfile2= "param/config_multi.yaml";
     //cv::FileStorage fSettings(calib_config_file2, cv::FileStorage::READ);
-    isdist = parseIntFromYAML(configfile2, "undist"); ;       //canny param 10
+    isdist = parseIntFromYAML(configfile2, "undist");       //canny param 10
     cv::Mat k1 = cv::Mat::zeros(3, 3, CV_32F); cv::Mat k2 = cv::Mat::zeros(3, 3, CV_32F); cv::Mat c1 = cv::Mat::zeros(4, 1, CV_32F);
     k1.at<float>(0, 0) = fx_; k1.at<float>(0, 1) = 0; k1.at<float>(0, 2) = cx_;
     k1.at<float>(1, 0) = 0; k1.at<float>(1, 1) = fy_; k1.at<float>(1, 2) = cy_;
@@ -448,13 +466,20 @@ Calibration::Calibration(const std::string& image_file,
     // std::vector<VoxelGrid> voxel_list;
     std::unordered_map<VOXEL_LOC, Voxel*> voxel_map;
     initVoxel(raw_lidar_cloud_, voxel_size_, voxel_map);//voxel_size_=1.0m
-    //这里希望保存不同voxel不同颜色的点云
-    LiDAREdgeExtraction(voxel_map, ransac_dis_threshold_, plane_size_threshold_, plane_line_cloud_);
+    //??????????治?voxel???????????
+    LiDAREdgeExtraction(calib_config_file, voxel_map,ransac_dis_threshold_, plane_size_threshold_, plane_line_cloud_);
+    
     //Ransac.dis_threshold: 0.015; Plane.max_size: 5
     plane_line_cloud_->height = 1;
     plane_line_cloud_->width = plane_line_cloud_->size();
+   if(!keyExistsInYAML(calib_config_file, "initial_guess_result"))
+   {
+    addinitial3d(plane_line_cloud_);
+    addinitial2d();
+    }
+    //loadCalibConfig(calib_config_file);
 
-    pcl::io::savePCDFileASCII("check/" + std::to_string(dataProcessingNum) + "_laserEdges.pcd", *plane_line_cloud_);//(“plane_line_cloud.pcd”, plane_line_cloud_);
+    pcl::io::savePCDFileASCII("check/" + std::to_string(dataProcessingNum) + "_laserEdges.pcd", *plane_line_cloud_);//(??plane_line_cloud.pcd??, plane_line_cloud_);
     dataProcessingNum++;
 };
 
@@ -496,14 +521,16 @@ bool Calibration::loadCalibConfig(const std::string& config_file)
         exit(-1);
     }
     else {}*/
-    init_extrinsic_ = parseMatrixFromYAML(config_file, "ExtrinsicMat");
-    init_rotation_matrix_ << init_extrinsic_.at<double>(0, 0),
+    if(keyExistsInYAML(config_file, "initial_guess_result"))
+    {init_extrinsic_ = parseMatrixFromYAML(config_file, "initial_guess_result");
+        init_rotation_matrix_ << init_extrinsic_.at<double>(0, 0),
         init_extrinsic_.at<double>(0, 1), init_extrinsic_.at<double>(0, 2),
         init_extrinsic_.at<double>(1, 0), init_extrinsic_.at<double>(1, 1),
         init_extrinsic_.at<double>(1, 2), init_extrinsic_.at<double>(2, 0),
         init_extrinsic_.at<double>(2, 1), init_extrinsic_.at<double>(2, 2);
-    init_translation_vector_ << init_extrinsic_.at<double>(0, 3),
-        init_extrinsic_.at<double>(1, 3), init_extrinsic_.at<double>(2, 3);
+        init_translation_vector_ << init_extrinsic_.at<double>(0, 3),
+        init_extrinsic_.at<double>(1, 3), init_extrinsic_.at<double>(2, 3);}
+    
     rgb_canny_threshold_ = parseDoubleFromYAML(config_file, "Canny.gray_threshold");       //canny param 10
     rgb_edge_minLen_ = parseDoubleFromYAML(config_file, "Canny.len_threshold");            //edge in image minlength 200
     voxel_size_ = parseDoubleFromYAML(config_file, "Voxel.size");                          //voxel size 0.5
@@ -549,16 +576,16 @@ void Calibration::colorCloud(
         // //Color.intensity_threshold: 10//why 2 < depth < 50
         // if (depth > 2 && depth < 50)
         // {
-        //   pts_3d.emplace_back(cv::Point3f(point.x, point.y, point.z));//类似push_back
+        //   pts_3d.emplace_back(cv::Point3f(point.x, point.y, point.z));//????push_back
         // }
-        pts_3d.emplace_back(cv::Point3f(point.x, point.y, point.z));//类似push_back
+        pts_3d.emplace_back(cv::Point3f(point.x, point.y, point.z));//????push_back
     }
     Eigen::AngleAxisd rotation_vector3;
     rotation_vector3 =
         Eigen::AngleAxisd(extrinsic_params[0], Eigen::Vector3d::UnitZ()) *
         Eigen::AngleAxisd(extrinsic_params[1], Eigen::Vector3d::UnitY()) *
         Eigen::AngleAxisd(extrinsic_params[2], Eigen::Vector3d::UnitX());
-    //三个欧拉角转轴角，然后相乘，似乎是转成旋转向量(李代数)
+    //????????????????????????????????????(?????)
 
     cv::Mat camera_matrix =
         (cv::Mat_<double>(3, 3) << fx_, 0.0, cx_, 0.0, fy_, cy_, 0.0, 0.0, 1.0);
@@ -569,7 +596,7 @@ void Calibration::colorCloud(
             rotation_vector3.angle() * rotation_vector3.axis().transpose()[0],
             rotation_vector3.angle() * rotation_vector3.axis().transpose()[1],
             rotation_vector3.angle() * rotation_vector3.axis().transpose()[2]);
-    //奇怪的数学表达//是适用于opencv的Rodrigues rotation vector//李代数与这个什么关系呢？
+    //???????????//????????opencv??Rodrigues rotation vector//??????????????????
 
     cv::Mat t_vec = (cv::Mat_<double>(3, 1) << extrinsic_params[3], extrinsic_params[4], extrinsic_params[5]);
     std::vector<cv::Point2f> pts_2d;
@@ -629,7 +656,7 @@ void myUndistortPoints(const std::vector<cv::Point2d>& src, std::vector<cv::Poin
     {
         const cv::Point2d& p = src[i];
 
-        //首先进行坐标转换；
+        //????????????????
         double xDistortion = (p.x - ux) / fx;
         double yDistortion = (p.y - uy) / fy;
 
@@ -638,7 +665,7 @@ void myUndistortPoints(const std::vector<cv::Point2d>& src, std::vector<cv::Poin
         double x0 = xDistortion;
         double y0 = yDistortion;
 
-        //这里使用迭代的方式进行求解，因为根据2中的公式直接求解是困难的，所以通过设定初值进行迭代，这也是OpenCV的求解策略；
+        //????????????????????????????2?е?????????????????????????趨??????е??????????OpenCV?????????
         for (int j = 0; j < 50; j++)
         {
             double r2 = xDistortion * xDistortion + yDistortion * yDistortion;
@@ -656,7 +683,7 @@ void myUndistortPoints(const std::vector<cv::Point2d>& src, std::vector<cv::Poin
             yDistortion = yCorrected;
         }
 
-        //进行坐标变换；
+        //????????任??
         xCorrected = xCorrected * fx + ux;
         yCorrected = yCorrected * fy + uy;
 
@@ -759,8 +786,8 @@ void Calibration::edgeDetector(const int& canny_threshold, const int& edge_thres
 //   cv::imwrite("check/canny.png",canny_result);
 //   // cv::waitKey(0);
 
-//   std::vector<std::vector<cv::Point>> contours;//轮廓
-//   std::vector<cv::Vec4i> hierarchy;//层次结构
+//   std::vector<std::vector<cv::Point>> contours;//????
+//   std::vector<cv::Vec4i> hierarchy;//??ν?
 //   cv::findContours(canny_result, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_NONE, cv::Point(0, 0));
 //   //contours -- Detected contours. Each contour is stored as a vector of points (e.g. std::vector<std::vector<cv::Point> >)
 //   //hierarchy -- Optional output vector (e.g. std::vector<cv::Vec4i>), containing information about the image topology
@@ -782,8 +809,8 @@ void Calibration::edgeDetector(const int& canny_threshold, const int& edge_thres
 //       for(size_t j = 0; j < contours[i].size(); j++)
 //       {
 //         edge_img.at<cv::Vec3b>(contours[i][j].y, contours[i][j].x) = RGBColor;//255
-//         //多通道图像: img.at<Vec3b>(i,j)[c]
-//         //单通道图像: img.at<uchar>(i,j)
+//         //????????: img.at<Vec3b>(i,j)[c]
+//         //????????: img.at<uchar>(i,j)
 //       }
 //     }
 //   }
@@ -818,7 +845,7 @@ void Calibration::edgeDetector(const int& canny_threshold, const int& edge_thres
 //   // cv::waitKey();
 // }
 
-//将点云投影为深度图
+//?????????????
 void Calibration::projection(
     const Vector6d& extrinsic_params,
     const pcl::PointCloud<pcl::PointXYZI>::Ptr& lidar_cloud,
@@ -877,7 +904,7 @@ void Calibration::projection(
             else
             {
                 float intensity = intensity_list[i];
-                if (intensity > 100)//这里的参数似乎是经验参数
+                if (intensity > 100)//???????????????????
                 {
                     intensity = 65535;
                 }
@@ -905,7 +932,7 @@ void Calibration::projection(
 
     projection_img = image_project.clone();
 }
-// 填补雷达深度图像！！！！
+// ????????????????
 cv::Mat Calibration::fillImg(const cv::Mat& input_img,
     const Direction first_direct,
     const Direction second_direct) {
@@ -943,7 +970,7 @@ cv::Mat Calibration::fillImg(const cv::Mat& input_img,
     }
     return fill_img;
 }
-//生成线特征联接图
+//???????????????
 cv::Mat Calibration::getConnectImg(
     const int dis_threshold,
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& rgb_edge_cloud,
@@ -972,9 +999,9 @@ cv::Mat Calibration::getConnectImg(
     int sumNum = 0;
 
     int line_count = 0;
-    // 指定近邻个数
+    // ??????????
     int K = 1;
-    // 创建两个向量，分别存放近邻的索引值、近邻的中心距
+    // ????????????????????????????????????????
     std::vector<int> pointIdxNKNSearch(K);
     std::vector<float> pointNKNSquaredDistance(K);
     for (size_t i = 0; i < search_cloud->points.size(); i++)
@@ -1083,7 +1110,7 @@ bool Calibration::checkFov(const cv::Point2d& p)
 //       }
 //     }
 //     VOXEL_LOC position((int64_t)loc_xyz[0], (int64_t)loc_xyz[1], (int64_t)loc_xyz[2]);
-//     //这里是int型，自动把坐标分成了不同的voxel
+//     //??????int????????????????????voxel
 //     auto iter = voxel_map.find(position);
 //     if (iter != voxel_map.end())
 //     {
@@ -1097,7 +1124,7 @@ bool Calibration::checkFov(const cv::Point2d& p)
 //       p_rgb.b = voxel_map[position]->voxel_color(2);
 //       test_cloud.push_back(p_rgb);
 //     } 
-//     else //如果没有voxel那么创建一个，但是查询点会被抛弃
+//     else //??????voxel?????????????????????????
 //     {
 //       Voxel *voxel = new Voxel(voxel_size);
 //       voxel_map[position] = voxel;
@@ -1123,8 +1150,8 @@ bool Calibration::checkFov(const cv::Point2d& p)
 //     if (iter->second->cloud->size() > 20)
 //     {
 //       //down_sampling_voxel(*(iter->second->cloud), 0.02);
-//       //体素滤波，小于0.01不处理
-//       //我认为低密度点云可以不滤波反而更好
+//       //?????????С??0.01??????
+//       //????????????????????????????
 //     }
 //   }
 // }
@@ -1150,9 +1177,9 @@ void Calibration::initVoxel(const pcl::PointCloud<pcl::PointXYZI>::Ptr& input_cl
             // }
         }
         // cout<<voxel_size<<"voxel_size"<<endl;
-        //点云在voxel中移动, +为沿轴反向, -为沿轴正向
+        //??????voxel?????, +???????, -?????????
         VOXEL_LOC position((int64_t)ceil(loc_xyz[0]), (int64_t)ceil(loc_xyz[1]), (int64_t)ceil(loc_xyz[2]));
-        //这里是int型，自动把坐标分成了不同的voxel
+        //??????int????????????????????voxel
         auto iter = voxel_map.find(position);
         if (iter != voxel_map.end())
         {
@@ -1166,7 +1193,7 @@ void Calibration::initVoxel(const pcl::PointCloud<pcl::PointXYZI>::Ptr& input_cl
             p_rgb.b = voxel_map[position]->voxel_color(2);
             VoxeledPts->push_back(p_rgb);
         }
-        else //如果没有voxel那么创建一个，但是查询点会被抛弃
+        else //??????voxel?????????????????????????
         {
             Voxel* voxel = new Voxel(voxel_size);
             voxel_map[position] = voxel;
@@ -1191,13 +1218,192 @@ void Calibration::initVoxel(const pcl::PointCloud<pcl::PointXYZI>::Ptr& input_cl
     //   if (iter->second->cloud->size() > 20)
     //   {
     //     //down_sampling_voxel(*(iter->second->cloud), 0.02);
-    //     //体素滤波，小于0.01不处理
-    //     //我认为低密度点云可以不滤波反而更好
+    //     //?????????С??0.01??????
+    //     //????????????????????????????
     //   }
     // }
 }
 
-void Calibration::LiDAREdgeExtraction(
+
+
+void Calibration::addinitial3d(pcl::PointCloud<pcl::PointXYZI>::Ptr& lidar_line_cloud_3d) {
+    std::vector<pcl::ModelCoefficients::Ptr> lines;
+    pcl::SACSegmentation<pcl::PointXYZI> seg;
+    seg.setOptimizeCoefficients(true);
+    seg.setModelType(pcl::SACMODEL_LINE);
+    seg.setMethodType(pcl::SAC_RANSAC);
+    seg.setDistanceThreshold(0.01);  // 调整阈值
+    pcl::PointCloud<pcl::PointXYZI>::Ptr lidar_line_cloud_3d_test(new pcl::PointCloud<pcl::PointXYZI>);
+    *lidar_line_cloud_3d_test=*lidar_line_cloud_3d;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr line_cloud(new pcl::PointCloud<pcl::PointXYZI>); // 创建新的点云对象，用于存储线特征
+    line_cloud->height=1;
+    line_cloud->width=0;
+     // 提取三条线特征
+    for (int i = 0; i < 3; ++i) {
+        pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+        pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+        
+        seg.setInputCloud(lidar_line_cloud_3d_test);
+        seg.segment(*inliers, *coefficients);
+        
+        if (inliers->indices.empty()) {
+            PCL_ERROR("Could not estimate a line model for the given dataset.");
+            return;
+        }
+        
+        lines.push_back(coefficients);
+
+        // 将线的点添加到线特征点云中
+        for (int index : inliers->indices) {
+            line_cloud->points.push_back(lidar_line_cloud_3d_test->points[index]);
+            line_cloud->width++;
+        }
+        
+        // 移除已经拟合的点，以便找到下一条线
+        pcl::ExtractIndices<pcl::PointXYZI> extract;
+        extract.setInputCloud(lidar_line_cloud_3d_test);
+        extract.setIndices(inliers);
+        extract.setNegative(true);
+        extract.filter(*lidar_line_cloud_3d_test);
+    }
+
+    // 保存线特征到 PCD 文件
+    pcl::io::savePCDFileASCII("check/" + std::to_string(dataProcessingNum) + "_lineseg.pcd", *line_cloud);
+    
+    // 使用最小二乘法计算三条线的交点
+    Eigen::Matrix<double, 9, 6> a;
+    Eigen::VectorXd b(9);
+    Eigen::VectorXd result(9);
+    a(0,0)=1;a(0,1)=0;a(0,2)=0;a(0,3)=-lines[0]->values[3];a(0,4)=0;a(0,5)=0;
+    a(1,0)=0;a(1,1)=1;a(1,2)=0;a(1,3)=-lines[0]->values[4];a(1,4)=0;a(1,5)=0;
+    a(2,0)=0;a(2,1)=0;a(2,2)=1;a(2,3)=-lines[0]->values[5];a(2,4)=0;a(2,5)=0;
+    a(3,0)=1;a(3,1)=0;a(3,2)=0;a(3,3)=0;a(3,4)=-lines[1]->values[3];a(3,5)=0;
+    a(4,0)=0;a(4,1)=1;a(4,2)=0;a(4,3)=0;a(4,4)=-lines[1]->values[4];a(4,5)=0;
+    a(5,0)=0;a(5,1)=0;a(5,2)=1;a(5,3)=0;a(5,4)=-lines[1]->values[5];a(5,5)=0;
+    a(6,0)=1;a(6,1)=0;a(6,2)=0;a(6,3)=0;a(6,4)=0;a(6,5)=-lines[2]->values[3];
+    a(7,0)=0;a(7,1)=1;a(7,2)=0;a(7,3)=0;a(7,4)=0;a(7,5)=-lines[2]->values[4];
+    a(8,0)=0;a(8,1)=0;a(8,2)=1;a(8,3)=0;a(8,4)=0;a(8,5)=-lines[2]->values[5];
+
+    b(0)=lines[0]->values[0];b(1)=lines[0]->values[1];b(2)=lines[0]->values[2];
+    b(3)=lines[1]->values[0];b(4)=lines[1]->values[1];b(5)=lines[1]->values[2];
+    b(6)=lines[2]->values[0];b(7)=lines[2]->values[1];b(8)=lines[2]->values[2];
+
+    result=(a.transpose()*a).inverse()*a.transpose()*b;
+
+    cv::Point3d intersection_point(result(0), result(1), result(2));
+
+    cluster3d.push_back(intersection_point);
+    cout<<"3dinitial point: "<<intersection_point.x<<", "<<intersection_point.y<<", "<<intersection_point.z<<endl;
+    std::ofstream fout("check/" + std::to_string(dataProcessingNum) + "_3dinterpoint.txt",ios::out);
+    fout<<intersection_point.x<<", "<<intersection_point.y<<", "<<intersection_point.z;
+}
+
+bool isFeaturePoint(const cv::Mat& image, int x, int y, int radius) {
+    int count_255 = 0, count_125 = 0, count_0 = 0, total_count = 0;
+    int upper_count = 0, lower_count = 0, left_count = 0, right_count = 0;
+    
+    // 设置边界
+    int x_start = std::max(0, x - radius);
+    int x_end = std::min(image.cols - 1, x + radius);
+    int y_start = std::max(0, y - radius);
+    int y_end = std::min(image.rows - 1, y + radius);
+
+    // 并行处理像素
+    //#pragma omp parallel for collapse(2) reduction(+:total_count, upper_count, left_count, right_count)
+    for (int i = -radius; i <= radius; ++i) {
+        int nx = x + i;
+        if (nx < 0 || nx >= image.cols) continue;
+
+        for (int j = -radius; j <= radius; ++j) {
+            int ny = y + j;
+            if (ny < 0 || ny >= image.rows) continue;
+
+            // 确保在圆形窗口内
+            if (i * i + j * j <= radius * radius) {
+                int pixel_value = image.at<uchar>(ny, nx);
+                total_count++;
+
+                // 区分上、下、左、右区域并进行统计
+                if (j > 0 && pixel_value == 255) upper_count++;
+                if (i < 0 && pixel_value == 0) left_count++;
+                if (i > 0 && pixel_value == 125) right_count++;
+            }
+        }
+    }
+
+    
+    // 检查各灰度值的比例是否接近 1/3
+    if (total_count == 0) return false;
+    // double ratio_255 = static_cast<double>(count_255) / total_count;
+    // double ratio_125 = static_cast<double>(count_125) / total_count;
+    // double ratio_0 = static_cast<double>(count_0) / total_count;
+    double ratio_upper = static_cast<double>(upper_count) / total_count;
+    double ratio_left = static_cast<double>(left_count) / total_count;
+    double ratio_right = static_cast<double>(right_count) / total_count;
+
+    return(abs(ratio_upper - 0.33333) < 0.05)&&
+           (abs(ratio_left - 0.33333) < 0.05)&&
+           (abs(ratio_right - 0.33333) < 0.05);
+}
+
+void Calibration::addinitial2d(){
+    cv::Mat grey=cv::imread("check/" + std::to_string(dataProcessingNum) + "_gray.png",0);
+
+    string configfile= "param/config_multi.yaml";
+    int radius = 20; // 设置圆形窗口的半径
+    radius = parseIntFromYAML(configfile, "initial2d_radius");
+    bool found = false;
+    // 遍历图像，找到满足条件的特征点
+    
+    for (int y = radius; y < grey.rows - radius; y=y+2) {
+        for (int x = radius; x < grey.cols - radius; x=x+2) {
+            if (isFeaturePoint(grey, x, y, radius)) {
+                cout << "2dinitialpoint: (" << x << ", " << y << ")" << endl;
+                // 在图像中标记特征点
+                cluster2d.push_back(cv::Point2d(x,y));
+                std::ofstream fout("check/" + std::to_string(dataProcessingNum) + "_2dinterpoint.txt",ios::out);
+                fout<<x<<", "<<-y<<", "<<0;
+                found = true;
+                // 可根据需要返回第一个特征点或继续查找其他特征点
+                break;
+            }
+        }
+        if (found) break; // 跳出外层循环
+    }
+    return;
+}
+
+void Calibration::calinitialguess(const std::string& calib_config_file){
+    cv::Mat k1 = cv::Mat::zeros(3, 3, CV_32F); cv::Mat k2 = cv::Mat::zeros(3, 3, CV_32F); cv::Mat c1 = cv::Mat::zeros(4, 1, CV_32F);
+    k1.at<float>(0, 0) = fx_; k1.at<float>(0, 1) = 0; k1.at<float>(0, 2) = cx_;
+    k1.at<float>(1, 0) = 0; k1.at<float>(1, 1) = fy_; k1.at<float>(1, 2) = cy_;
+    k1.at<float>(2, 0) = 0; k1.at<float>(2, 1) = 0; k1.at<float>(2, 2) = 1;
+    c1.at<float>(0) = k1_; c1.at<float>(1) = k2_; c1.at<float>(2) = p1_; c1.at<float>(3) = p2_;
+    cv::Mat rvec;cv::Mat tvec;
+    cv::solvePnPRansac(cluster3d, cluster2d, k1, c1, rvec, tvec);
+    cv::Mat R;
+    cv::Rodrigues(rvec, R);
+    cv::Mat matrix = (cv::Mat_<double>(4, 4) << R.at<double>(0,0),R.at<double>(0,1),R.at<double>(0,2),tvec.at<double>(0,0),
+                                                R.at<double>(1,0),R.at<double>(1,1),R.at<double>(1,2),tvec.at<double>(1,0),
+                                                R.at<double>(2,0),R.at<double>(2,1),R.at<double>(2,2),tvec.at<double>(2,0),
+                                                0,0,0,1);
+    init_extrinsic_=matrix;
+    init_rotation_matrix_ << init_extrinsic_.at<double>(0, 0),
+        init_extrinsic_.at<double>(0, 1), init_extrinsic_.at<double>(0, 2),
+        init_extrinsic_.at<double>(1, 0), init_extrinsic_.at<double>(1, 1),
+        init_extrinsic_.at<double>(1, 2), init_extrinsic_.at<double>(2, 0),
+        init_extrinsic_.at<double>(2, 1), init_extrinsic_.at<double>(2, 2);
+    init_translation_vector_ << init_extrinsic_.at<double>(0, 3),
+        init_extrinsic_.at<double>(1, 3), init_extrinsic_.at<double>(2, 3);
+    
+    writeMatrixToYAML(calib_config_file, "initial_guess_result", matrix);
+    return;
+}
+
+
+
+
+void Calibration::LiDAREdgeExtraction(const std::string& calib_config_file,
     const std::unordered_map<VOXEL_LOC, Voxel*>& voxel_map,
     const float ransac_dis_thre, const int plane_size_threshold,
     pcl::PointCloud<pcl::PointXYZI>::Ptr& lidar_line_cloud_3d)
@@ -1209,22 +1415,22 @@ void Calibration::LiDAREdgeExtraction(
         if (iter->second->cloud->size() > 30)
         {
             std::vector<Plane> plane_list;
-            // 创建一个体素滤波器
+            // ????????????????
             pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filter(new pcl::PointCloud<pcl::PointXYZI>);
             pcl::copyPointCloud(*iter->second->cloud, *cloud_filter);
-            //创建一个模型参数对象，用于记录结果
+            //??????????????????????????
             pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-            // inliers表示误差能容忍的点，记录点云序号
+            // inliers????????????????????????
             pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-            //创建一个分割器
+            //????????????
             pcl::SACSegmentation<pcl::PointXYZI> seg;
-            // Optional,设置结果平面展示的点是分割掉的点还是分割剩下的点
+            // Optional,???????????????????????????????
             seg.setOptimizeCoefficients(true);
-            // Mandatory-设置目标几何形状
+            // Mandatory-????????????
             seg.setModelType(pcl::SACMODEL_PLANE);
-            //分割方法：随机采样法
+            //????????????????
             seg.setMethodType(pcl::SAC_RANSAC);
-            //设置误差容忍范围，也就是阈值
+            //????????????Χ??????????
             // if (iter->second->voxel_origin[0] < 10) 
             // {
             //   seg.setDistanceThreshold(ransac_dis_thre);
@@ -1243,10 +1449,10 @@ void Calibration::LiDAREdgeExtraction(
             {
                 pcl::PointCloud<pcl::PointXYZI> planner_cloud;
                 pcl::ExtractIndices<pcl::PointXYZI> extract;
-                //输入点云
+                //???????
                 seg.setInputCloud(cloud_filter);
                 seg.setMaxIterations(500);
-                //分割点云
+                //??????
                 seg.segment(*inliers, *coefficients);
 
                 if (inliers->indices.size() == 0)
@@ -1374,16 +1580,16 @@ void Calibration::LiDAREdgeExtraction(
 //         float point_dis_threshold = 0.00;
 //         if (theta > theta_max_ && theta < theta_min_) //cos(30) -- cos(150)
 //         {
-//           ////////////////////////两个点云合并
+//           ////////////////////////??????????
 //           pcl::PointCloud<pcl::PointXYZ>::Ptr GlobalCloud(new pcl::PointCloud<pcl::PointXYZ>);
 //           pcl::copyPointCloud(plane_list[plane_index1].cloud + plane_list[plane_index2].cloud, *GlobalCloud);
 //           // pcl::PointCloud<pcl::PointXYZI> GlobalCloud;
 //           // GlobalCloud = plane_list[plane_index1].cloud + plane_list[plane_index2].cloud;
-//           ////////////////////////获取坐标范围，得到两个点
+//           ////////////////////////???????Χ???????????
 //           pcl::PointXYZ minXYZ, maxXYZ;
 // 	        pcl::getMinMax3D(*GlobalCloud, minXYZ, maxXYZ);
 
-//           ////////////////////////得到线与面的两个交点
+//           ////////////////////////??????????????????
 //           matrix[3][1] = 1;
 //           matrix[3][2] = 0;
 //           matrix[3][3] = 0;
@@ -1449,7 +1655,7 @@ void Calibration::LiDAREdgeExtraction(
 //           }
 
 
-//           ////////////////////////得到相交平面的两个端点？？？？为了处理稀疏点云，还是两个端点好,两端对进！
+//           ////////////////////////???????????????????????????????????????????????,????????
 //           // pcl::PointCloud<pcl::PointXYZI> line_cloud;
 //           // Eigen::Vector3d EndPointA = pointA;
 //           // Eigen::Vector3d EndPointB = pointB;
@@ -1466,10 +1672,10 @@ void Calibration::LiDAREdgeExtraction(
 //             pcl::PointXYZ p2(EndPointSet[1][0], EndPointSet[1][1], EndPointSet[1][2]);//let it B
 //             float length = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2) +pow(p1.z - p2.z, 2));
 //             cout<<"length"<<length<<endl;
-//             // 指定近邻个数
+//             // ??????????
 //             int K = 1;
 //             int EndPointFlag = 0;
-//             // 创建两个向量，分别存放近邻的索引值、近邻的中心距
+//             // ????????????????????????????????????????
 //             std::vector<int> pointIdxRSearch1(K);
 //             std::vector<float> pointRSquaredDistance1(K);
 //             std::vector<int> pointIdxRSearch2(K);
@@ -1523,7 +1729,7 @@ void Calibration::LiDAREdgeExtraction(
 //             // std::cout<<"/////////////////////////////////////"<<endl;
 //             // std::cout<<EndPointB<<endl;
 //             // std::cout<<"/////////////////////////////////////"<<endl;
-//             ////////////////////////利用两个端点得到合适密度的点云线段，现在的密度是0.01
+//             ////////////////////////??????????????????????????Σ???????????0.01
 //             if(EndPointFlag==2)
 //             {
 //               float SegmentLength = sqrt(pow(EndPointA[0] - EndPointB[0], 2) + pow(EndPointA[1] - EndPointB[1], 2) +pow(EndPointA[2] - EndPointB[2], 2));
@@ -1593,16 +1799,16 @@ void Calibration::calcLineLin(std::vector<Plane>& plane_list, std::vector<pcl::P
                 float point_dis_threshold = 0.00;
                 if (theta > theta_max_ && theta < theta_min_) //cos(30) -- cos(150)
                 {
-                    ////////////////////////两个点云合并
+                    ////////////////////////??????????
                     pcl::PointCloud<pcl::PointXYZ>::Ptr GlobalCloud(new pcl::PointCloud<pcl::PointXYZ>);
                     pcl::copyPointCloud(plane_list[plane_index1].cloud + plane_list[plane_index2].cloud, *GlobalCloud);
                     // pcl::PointCloud<pcl::PointXYZI> GlobalCloud;
                     // GlobalCloud = plane_list[plane_index1].cloud + plane_list[plane_index2].cloud;
-                    ////////////////////////获取坐标范围，得到两个点
+                    ////////////////////////???????Χ???????????
                     pcl::PointXYZ minXYZ, maxXYZ;
                     pcl::getMinMax3D(*GlobalCloud, minXYZ, maxXYZ);
 
-                    ////////////////////////叉乘获得线与面的交点所在的两个面
+                    ////////////////////////??????????????????????????
                     Eigen::Vector3d LineDirection = plane_list[plane_index1].normal.cross(plane_list[plane_index2].normal);
                     // std::cout<<endl<<"plane_list[plane_index1].normal"<<endl;
                     // std::cout<<plane_list[plane_index1].normal<<endl;
@@ -1615,7 +1821,7 @@ void Calibration::calcLineLin(std::vector<Plane>& plane_list, std::vector<pcl::P
                         IntscFlag = 1;
                     if (abs(LineDirection[2]) > abs(LineDirection[0]) && abs(LineDirection[2]) > abs(LineDirection[1]))
                         IntscFlag = 2;
-                    ////////////////////////得到线与面的两个交点
+                    ////////////////////////??????????????????
                     if (IntscFlag == -1)break;
                     if (IntscFlag == 0)
                     {
@@ -1659,7 +1865,7 @@ void Calibration::calcLineLin(std::vector<Plane>& plane_list, std::vector<pcl::P
                     // std::cout<<"/////////////////////////////////////"<<endl;
                     // std::cout<<pointB<<endl;
                     // std::cout<<"/////////////////////////////////////"<<endl;
-                    ////////////////////////得到相交平面的两个端点？？？？为了处理稀疏点云，还是两个端点好,两端对进！
+                    ////////////////////////???????????????????????????????????????????????,????????
                     // pcl::PointCloud<pcl::PointXYZI> line_cloud;
                     // Eigen::Vector3d EndPointA = pointA;
                     // Eigen::Vector3d EndPointB = pointB;
@@ -1673,10 +1879,10 @@ void Calibration::calcLineLin(std::vector<Plane>& plane_list, std::vector<pcl::P
                     pcl::PointXYZ p1(points[0][0], points[0][1], points[0][2]);//let it A
                     pcl::PointXYZ p2(points[1][0], points[1][1], points[1][2]);//let it B
                     float length = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2) + pow(p1.z - p2.z, 2));
-                    // 指定近邻个数
+                    // ??????????
                     int K = 1;
                     int EndPointFlag = 0;
-                    // 创建两个向量，分别存放近邻的索引值、近邻的中心距
+                    // ????????????????????????????????????????
                     std::vector<int> pointIdxRSearch1(K);
                     std::vector<float> pointRSquaredDistance1(K);
                     std::vector<int> pointIdxRSearch2(K);
@@ -1730,7 +1936,7 @@ void Calibration::calcLineLin(std::vector<Plane>& plane_list, std::vector<pcl::P
                     // std::cout<<"/////////////////////////////////////"<<endl;
                     // std::cout<<EndPointB<<endl;
                     // std::cout<<"/////////////////////////////////////"<<endl;
-                    ////////////////////////利用两个端点得到合适密度的点云线段，现在的密度是0.01
+                    ////////////////////////??????????????????????????Σ???????????0.01
                     if (EndPointFlag == 2)
                     {
                         float SegmentLength = sqrt(pow(EndPointA[0] - EndPointB[0], 2) + pow(EndPointA[1] - EndPointB[1], 2) + pow(EndPointA[2] - EndPointB[2], 2));
@@ -1900,9 +2106,9 @@ void Calibration::calcLineLin(std::vector<Plane>& plane_list, std::vector<pcl::P
 //               pcl::PointXYZ p1(points[0][0], points[0][1], points[0][2]);
 //               pcl::PointXYZ p2(points[1][0], points[1][1], points[1][2]);
 //               float length = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2) +pow(p1.z - p2.z, 2));
-//               // 指定近邻个数
+//               // ??????????
 //               int K = 1;
-//               // 创建两个向量，分别存放近邻的索引值、近邻的中心距
+//               // ????????????????????????????????????????
 //               std::vector<int> pointIdxNKNSearch1(K);
 //               std::vector<float> pointNKNSquaredDistance1(K);
 //               std::vector<int> pointIdxNKNSearch2(K);
@@ -2067,9 +2273,9 @@ void Calibration::buildVPnp(
     tree_cloud = cam_edge_cloud_2d;
     tree_cloud_lidar = line_edge_cloud_2d;
     search_cloud = line_edge_cloud_2d;
-    // 指定近邻个数
+    // ??????????
     int K = 5;
-    // 创建两个向量，分别存放近邻的索引值、近邻的中心距
+    // ????????????????????????????????????????
     std::vector<int> pointIdxNKNSearch(K);
     std::vector<float> pointNKNSquaredDistance(K);
     std::vector<int> pointIdxNKNSearchLidar(K);
@@ -2182,13 +2388,13 @@ void Calibration::calcDirection(const std::vector<Eigen::Vector2d>& points, Eige
     Eigen::MatrixXd evalsReal;
     evalsReal = evals.real();
     Eigen::MatrixXf::Index evalsMax;
-    evalsReal.rowwise().sum().maxCoeff(&evalsMax); //得到最大特征值的位置
+    evalsReal.rowwise().sum().maxCoeff(&evalsMax); //?????????????λ??
     direction << evecs.real()(0, evalsMax), evecs.real()(1, evalsMax);
 }
 
 cv::Mat Calibration::getProjectionImg(const Vector6d& extrinsic_params)
 {
-    cv::Mat depth_projection_img;//似乎应该叫做intensity projection image
+    cv::Mat depth_projection_img;//?????????intensity projection image
     projection(extrinsic_params, raw_lidar_cloud_, INTENSITY, false, depth_projection_img);
 
     cv::Mat merge_img = image_.clone();
@@ -2200,7 +2406,7 @@ cv::Mat Calibration::getProjectionImg(const Vector6d& extrinsic_params)
             float norm = depth_projection_img.at<uchar>(y, x) / 256.0;
             if (norm > 0)
             {
-                mapJet(norm, 0, 1, r, g, b);//利用intensity生成伪彩色图像
+                mapJet(norm, 0, 1, r, g, b);//????intensity????α??????
                 merge_img.at<cv::Vec3b>(y, x)[0] = b;
                 merge_img.at<cv::Vec3b>(y, x)[1] = g;
                 merge_img.at<cv::Vec3b>(y, x)[2] = r;
@@ -2212,7 +2418,7 @@ cv::Mat Calibration::getProjectionImg(const Vector6d& extrinsic_params)
 
 // cv::Mat Calibration::getProjectionImg(const Vector6d &extrinsic_params)
 // {
-//   cv::Mat depth_projection_img;//似乎应该叫做intensity projection image
+//   cv::Mat depth_projection_img;//?????????intensity projection image
 //   projection(extrinsic_params, raw_lidar_cloud_, INTENSITY, false, depth_projection_img);
 //   cv::Mat map_img = cv::Mat::zeros(height_, width_, CV_8UC3);
 //   for (int x = 0; x < map_img.cols; x++)
@@ -2221,7 +2427,7 @@ cv::Mat Calibration::getProjectionImg(const Vector6d& extrinsic_params)
 //     {
 //       uint8_t r, g, b;
 //       float norm = depth_projection_img.at<uchar>(y, x) / 256.0;
-//       mapJet(norm, 0, 1, r, g, b);//利用intensity生成伪彩色图像
+//       mapJet(norm, 0, 1, r, g, b);//????intensity????α??????
 //       ///////////////////////////////////////////
 //       cv::Scalar color = cv::Scalar(b, g, r);
 //       int thickness = 2;
@@ -2237,7 +2443,7 @@ cv::Mat Calibration::getProjectionImg(const Vector6d& extrinsic_params)
 //   cv::Mat merge_img;
 //   if (image_.type() == CV_8UC3)
 //   {
-//     merge_img = 0.5 * map_img + 0.8 * image_;//图像融合非常impressive
+//     merge_img = 0.5 * map_img + 0.8 * image_;//????????impressive
 //   }
 //   else
 //   {

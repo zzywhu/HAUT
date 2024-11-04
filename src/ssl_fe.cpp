@@ -30,6 +30,8 @@ using namespace cv;
 string image_path;
 string pcd_path;
 string result_path;
+std::vector<cv::Point2d> cluster2d;
+std::vector<cv::Point3d> cluster3d;
 int data_num;
 //// Camera config
 //vector<double> camera_matrix;
@@ -169,7 +171,8 @@ int main()
 
     calibs.push_back(single_calib);
   }
-
+  if(!keyExistsInYAML(configfile, "initial_guess_result"))
+  {calibs[0].calinitialguess(calib_config_file);}
   Eigen::Vector3d init_euler_angle =
       calibs[0].init_rotation_matrix_.eulerAngles(2, 1, 0);
   Eigen::Vector3d init_transation = calibs[0].init_translation_vector_;

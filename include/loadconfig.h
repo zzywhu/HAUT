@@ -6,6 +6,69 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 
+bool keyExistsInYAML(const std::string& filepath, const std::string& key) {
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open the file!" << std::endl;
+        return false;
+    }
+
+    std::string line;
+    bool found = false;
+    while (std::getline(file, line)) {
+        if (line.find(key) != std::string::npos) {
+            found = true;
+            break;
+        }
+    }
+
+    file.close();
+    return found;
+}
+
+void writeMatrixToYAML(const std::string& filepath, const std::string& key, const cv::Mat& matrix) {
+    // Check if the matrix is valid
+    if (matrix.empty()) {
+        std::cerr << "The matrix is empty!" << std::endl;
+        return;
+    }
+
+    // Check if the key already exists in the file
+    if (keyExistsInYAML(filepath, key)) {
+        std::cout << "Key \"" << key << "\" already exists in the file. Skipping write." << std::endl;
+        return;
+    }
+
+    // Open the file for writing in append mode
+    std::ofstream file(filepath, std::ios::out | std::ios::app);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open the file for writing!" << std::endl;
+        return;
+    }
+
+    // Write the key and matrix details
+    file << key << ":\n";
+    file << "  rows: " << matrix.rows << "\n";
+    file << "  cols: " << matrix.cols << "\n";
+    file << "  dt: CV_64F\n"; // Assuming double type, you can modify as needed
+
+    // Write the matrix data
+    file << "  data: [";
+    for (int i = 0; i < matrix.rows; ++i) {
+        for (int j = 0; j < matrix.cols; ++j) {
+            file << matrix.at<double>(i, j);
+            if (j < matrix.cols - 1 || i < matrix.rows - 1) {
+                file << ", ";
+            }
+        }
+    }
+    file << "]\n"; // End the data section
+
+    file.close();
+    std::cout << "Matrix written successfully to " << filepath << std::endl;
+}
+
+
 cv::Mat parseMatrixFromYAML(const std::string& filepath, const std::string& key) {
     std::fstream file(filepath, std::ios::in);
     

@@ -1,22 +1,14 @@
 {
     "configurations": [
         {
-            "name": "linux-gcc-x64",
+            "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**",
-                "/usr/include/pcl-1.10",
-                "/usr/include/eigen3",
-                "/usr/include/vtk-7.1",
-                "/usr/include/opencv4"
+                "${workspaceFolder}/**"
             ],
-            "compilerPath": "/usr/bin/gcc",
-            "cStandard": "${default}",
-            "cppStandard": "${default}",
-            "intelliSenseMode": "linux-gcc-x64",
-            "compilerArgs": [
-                ""
-            ],
-            "configurationProvider": "go2sh.cmake-integration"
+            "defines": [],
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
         }
     ],
     "version": 4
