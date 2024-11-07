@@ -20,6 +20,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/ModelCoefficients.h>
+#include "cluster.h"
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
@@ -34,6 +35,9 @@
 #include <pcl/point_types.h>
 #include <cmath>
 #include"loadconfig.h"
+
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/segmentation/extract_clusters.h>
 ////////////////////////////////////////////////
 #include <pcl/point_types.h>
 #include <pcl/common/common.h>
@@ -247,6 +251,12 @@ public:
     void addinitial2d();
 
     void calinitialguess(const std::string& calib_config_file);
+    void euclideanClusterSegmentation(pcl::PointCloud<pcl::PointXYZI>::Ptr& input_cloud,
+                                   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& clusters,
+                                   float cluster_tolerance ,  // 聚类容忍度
+                                   int min_cluster_size,     // 最小聚类大小
+                                   int max_cluster_size);
+    void detectTarget(pcl::PointCloud<pcl::PointXYZI>::Ptr& input_cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& output_cloud);
 
     // ??????
 
@@ -465,6 +475,8 @@ Calibration::Calibration(const std::string& image_file,
     // Eigen::Vector3d origin(0, -25, -10);
     // std::vector<VoxelGrid> voxel_list;
     std::unordered_map<VOXEL_LOC, Voxel*> voxel_map;
+    detectTarget(raw_lidar_cloud_,raw_lidar_cloud_);
+    pcl::io::savePCDFileASCII("check/" + std::to_string(dataProcessingNum) + "_laserseg.pcd", *raw_lidar_cloud_);//(??plane_line_cloud.pcd??, plane_line_cloud_);
     initVoxel(raw_lidar_cloud_, voxel_size_, voxel_map);//voxel_size_=1.0m
     //??????????治?voxel???????????
     LiDAREdgeExtraction(calib_config_file, voxel_map,ransac_dis_threshold_, plane_size_threshold_, plane_line_cloud_);
@@ -1400,6 +1412,200 @@ void Calibration::calinitialguess(const std::string& calib_config_file){
     return;
 }
 
+void Calibration::euclideanClusterSegmentation(pcl::PointCloud<pcl::PointXYZI>::Ptr& input_cloud,
+                                   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& clusters,
+                                   float cluster_tolerance = 0.01,  // 聚类容忍度
+                                   int min_cluster_size = 10,     // 最小聚类大小
+                                   int max_cluster_size = 25000)   // 最大聚类大小
+{
+    // 创建一个空的KD树对象用于搜索
+    pcl::search::KdTree<pcl::PointXYZI>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZI>());
+
+    // 创建一个欧式聚类对象
+    pcl::EuclideanClusterExtraction<pcl::PointXYZI> ec;
+    ec.setClusterTolerance(cluster_tolerance);  // 设置聚类的容忍度（单位：米）
+    ec.setMinClusterSize(min_cluster_size);     // 设置最小聚类大小
+    ec.setMaxClusterSize(max_cluster_size);     // 设置最大聚类大小
+    ec.setSearchMethod(tree);                   // 设置搜索方式为 KD 树
+    ec.setInputCloud(input_cloud);              // 设置输入点云数据
+
+    // 输出聚类结果
+    std::vector<pcl::PointIndices> cluster_indices;
+    ec.extract(cluster_indices);
+
+    // 随机颜色生成函数
+    auto getRandomColor = []() -> uint32_t {
+        // 随机生成 RGB 颜色
+        uint32_t color = (rand() % 256) << 16 | (rand() % 256) << 8 | (rand() % 256);
+        return color;
+    };
+
+    // 遍历聚类结果，将每个聚类保存到 clusters 向量中，并为每个类分配不同颜色
+    for (const auto& cluster : cluster_indices) {
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZRGB>);
+        uint32_t cluster_color = getRandomColor();  // 获取随机颜色
+
+        for (const auto& index : cluster.indices) {
+            pcl::PointXYZRGB point;
+            point.x = input_cloud->points[index].x;
+            point.y = input_cloud->points[index].y;
+            point.z = input_cloud->points[index].z;
+            point.rgb = *reinterpret_cast<float*>(&cluster_color);  // 设置该点的颜色
+
+            cloud_cluster->points.push_back(point);
+        }
+
+        cloud_cluster->width = cloud_cluster->points.size();
+        cloud_cluster->height = 1;
+        cloud_cluster->is_dense = true;
+        clusters.push_back(cloud_cluster);
+    }
+}
+
+void Calibration::detectTarget(pcl::PointCloud<pcl::PointXYZI>::Ptr& input_cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& output_cloud) {
+    // 创建平面分割对象
+        std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>> clusters;
+    pointCloudcluster(input_cloud,clusters);
+    int id=0;
+for(int i=0;i<clusters.size();i++){
+        if (clusters[i]->points.size() > 10)
+        {
+            std::vector<PlaneRGB> plane_list;
+            // ????????????????
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filter(new pcl::PointCloud<pcl::PointXYZRGB>);
+            pcl::copyPointCloud(*clusters[i], *cloud_filter);
+            //??????????????????????????
+            pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+            // inliers????????????????????????
+            pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+            //????????????
+            pcl::SACSegmentation<pcl::PointXYZRGB> seg;
+            // Optional,???????????????????????????????
+            seg.setOptimizeCoefficients(true);
+            // Mandatory-????????????
+            seg.setModelType(pcl::SACMODEL_PLANE);
+            //????????????????
+            seg.setMethodType(pcl::SAC_RANSAC);
+            //????????????Χ??????????
+            // if (iter->second->voxel_origin[0] < 10) 
+            // {
+            //   seg.setDistanceThreshold(ransac_dis_thre);
+            // }
+            // else 
+            // {
+            //   seg.setDistanceThreshold(ransac_dis_thre);
+            // }
+            seg.setDistanceThreshold(ransac_dis_threshold_);//0.01
+
+            // pcl::PointCloud<pcl::PointXYZRGB> color_planner_cloud;
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr color_planner_cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr mergedPts(new pcl::PointCloud<pcl::PointXYZRGB>());
+            int plane_index = 0;
+            while (cloud_filter->points.size() > 10)
+            {
+                pcl::PointCloud<pcl::PointXYZRGB> planner_cloud;
+                pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+                //???????
+                seg.setInputCloud(cloud_filter);
+                seg.setMaxIterations(500);
+                //??????
+                seg.segment(*inliers, *coefficients);
+
+                if (inliers->indices.size() == 0)
+                {
+                    break;
+                }
+                extract.setIndices(inliers);
+                extract.setInputCloud(cloud_filter);
+                extract.filter(planner_cloud);
+                if (planner_cloud.size() > plane_size_threshold_)
+                {
+                    pcl::PointCloud<pcl::PointXYZRGB> color_cloud;
+                    std::vector<unsigned int> colors;
+                    colors.push_back(static_cast<unsigned int>(rand() % 256));
+                    colors.push_back(static_cast<unsigned int>(rand() % 256));
+                    colors.push_back(static_cast<unsigned int>(rand() % 256));
+                    pcl::PointXYZRGB p_center;
+                    p_center.x = 0;
+                    p_center.y =0;
+                    p_center.z = 0;
+                    for (size_t i = 0; i < planner_cloud.points.size(); i++)
+                    {
+                        pcl::PointXYZRGB p;
+                        p.x = planner_cloud.points[i].x;
+                        p.y = planner_cloud.points[i].y;
+                        p.z = planner_cloud.points[i].z;
+                        p_center.x += p.x;
+                        p_center.y += p.y;
+                        p_center.z += p.z;
+                        p.r = colors[0];
+                        p.g = colors[1];
+                        p.b = colors[2];
+                        color_cloud.push_back(p);
+                        color_planner_cloud->push_back(p);
+                    }
+                    p_center.x = p_center.x / planner_cloud.size();
+                    p_center.y = p_center.y / planner_cloud.size();
+                    p_center.z = p_center.z / planner_cloud.size();
+                    PlaneRGB single_plane;
+                    single_plane.cloud = planner_cloud;
+                    single_plane.p_center = p_center;
+                    single_plane.normal << coefficients->values[0],
+                        coefficients->values[1], coefficients->values[2];
+                    single_plane.index = plane_index;
+                    plane_list.push_back(single_plane);
+                    plane_index++;
+                }
+                extract.setNegative(true);
+                pcl::PointCloud<pcl::PointXYZRGB> cloud_f;
+                extract.filter(cloud_f);
+                *cloud_filter = cloud_f;
+            }
+            if(plane_list.size()==3)
+        {
+            Eigen::Vector3d center1;Eigen::Vector3d center2;Eigen::Vector3d center3;
+            center1(0)=plane_list[0].p_center.x;center1(1)=plane_list[0].p_center.y;center1(2)=plane_list[0].p_center.z;
+            center2(0)=plane_list[1].p_center.x;center2(1)=plane_list[1].p_center.y;center2(2)=plane_list[1].p_center.z;
+            center3(0)=plane_list[2].p_center.x;center3(1)=plane_list[2].p_center.y;center3(2)=plane_list[2].p_center.z;
+            Eigen::Vector3d center=center1+center2+center3;
+            center=center/3;
+            double dis1 =abs((center-center1).dot(plane_list[0].normal));
+            double dis2 =abs((center-center2).dot(plane_list[1].normal));
+            double dis3 =abs((center-center3).dot(plane_list[2].normal));
+            if(abs(plane_list[0].normal.dot(plane_list[1].normal))<0.1&&abs(plane_list[2].normal.dot(plane_list[1].normal))<0.1&&abs(dis1-dis2)<0.05&&abs(dis1-dis3)<0.05)
+            {
+                id=i;
+                cout<<"find target"<<endl;
+            }
+        }
+        }
+        
+    }
+    output_cloud->clear();
+    output_cloud->height=1;
+    output_cloud->width=0;
+    for(int i=0;i<clusters[id]->points.size();i++)
+    {
+        pcl::PointXYZI temp;
+        temp.x=clusters[id]->points[i].x;
+        temp.y=clusters[id]->points[i].y;
+        temp.z=clusters[id]->points[i].z;
+        temp.intensity=0;
+        output_cloud->points.push_back(temp);
+        output_cloud->width++;
+    }
+
+}
+
+
+    // // 调用欧式聚类分割
+    // euclideanClusterSegmentation(input_cloud, clusters);
+    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr check_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    // for (const auto& cluster : clusters) {
+    //     *check_cloud += *cluster;  // 将每个聚类的点云添加到总点云中
+    // }
+
+     //pcl::io::savePCDFileASCII("check/" + std::to_string(dataProcessingNum) + "
 
 
 

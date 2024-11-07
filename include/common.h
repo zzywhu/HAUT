@@ -84,6 +84,14 @@ typedef struct Plane
     int index;
 } Plane;
 
+typedef struct PlaneRGB
+{
+    pcl::PointCloud<pcl::PointXYZRGB> cloud;
+    pcl::PointXYZRGB p_center;
+    Eigen::Vector3d normal;
+    int index;
+} PlaneRGB;
+
 struct M_POINT
 {
     float xyz[3];

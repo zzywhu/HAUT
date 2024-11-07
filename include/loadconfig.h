@@ -195,7 +195,7 @@ std::string parseStringFromYAML(const std::string& filepath, const std::string& 
     std::string line;
     while (std::getline(file, line)) {
         // Remove leading whitespace
-        line.erase(0, line.find_first_not_of(" \t\n\r"));
+        line.erase(0,line.find_first_not_of(" \t\n\r"));
 
         // Check if the line contains the key followed by a colon
         if (line.find(key + ":") == 0) {

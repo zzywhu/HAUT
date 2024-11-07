@@ -16,6 +16,7 @@
 #include "stdio.h"
 #include <iostream>
 #include <fstream>
+//#include"cluster.h"
 
 #include "opencv2/opencv.hpp"
 #include <opencv2/core/core.hpp>
@@ -140,7 +141,6 @@ int main()
   vector<double> camera_matrix({ 1155.12539531, 0.0,1035.8484391 , 0.0, 1154.54311767 ,757.55707028 , 0.0, 0.0, 1.0});
   vector<double>dist_coeffs({ -0.03154265,	-0.01279613, 0.0138742,	-0.00618993, 0});
   bool use_rough_calib = false;
- 
   
   //第一步就应该做去畸变！！！
  

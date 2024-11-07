@@ -3,8 +3,8 @@
 
 # Initial extrinsic (usually provided by hand measurement or cad design)
 data_num: 13
-image_path: /media/zzy/T7/zglvi_c_data/lidar-camera/data
-pcd_path: /media/zzy/T7/zglvi_c_data/lidar-camera/data
+image_path: /media/zzy/T7/zglvi_c_data/lidar-camera/orign_data
+pcd_path: /media/zzy/T7/zglvi_c_data/lidar-camera/orign_data
 
 undist: 2 #0 for origin 1 for fiseye 2 for pinhole 
 
@@ -43,6 +43,7 @@ Color.intensity_threshold: 10
 
 
 initial2d_radius: 50
+
 initial_guess_result:
   rows: 4
   cols: 4
