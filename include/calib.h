@@ -35,6 +35,7 @@
 #include <pcl/point_types.h>
 #include <cmath>
 #include"loadconfig.h"
+#include"project.h"
 
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_clusters.h>
@@ -475,9 +476,11 @@ Calibration::Calibration(const std::string& image_file,
     // Eigen::Vector3d origin(0, -25, -10);
     // std::vector<VoxelGrid> voxel_list;
     std::unordered_map<VOXEL_LOC, Voxel*> voxel_map;
-    detectTarget(raw_lidar_cloud_,raw_lidar_cloud_);
-    pcl::io::savePCDFileASCII("check/" + std::to_string(dataProcessingNum) + "_laserseg.pcd", *raw_lidar_cloud_);//(??plane_line_cloud.pcd??, plane_line_cloud_);
-    initVoxel(raw_lidar_cloud_, voxel_size_, voxel_map);//voxel_size_=1.0m
+    pcl::PointCloud<pcl::PointXYZI>::Ptr raw_lidar_cloud;
+    raw_lidar_cloud=pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>);
+    detectTarget(raw_lidar_cloud_,raw_lidar_cloud);
+    pcl::io::savePCDFileASCII("check/" + std::to_string(dataProcessingNum) + "_laserseg.pcd", *raw_lidar_cloud);//(??plane_line_cloud.pcd??, plane_line_cloud_);
+    initVoxel(raw_lidar_cloud, voxel_size_, voxel_map);//voxel_size_=1.0m
     //??????????÷Œ?voxel???????????
     LiDAREdgeExtraction(calib_config_file, voxel_map,ransac_dis_threshold_, plane_size_threshold_, plane_line_cloud_);
     
@@ -2601,25 +2604,26 @@ void Calibration::calcDirection(const std::vector<Eigen::Vector2d>& points, Eige
 cv::Mat Calibration::getProjectionImg(const Vector6d& extrinsic_params)
 {
     cv::Mat depth_projection_img;//?????????intensity projection image
-    projection(extrinsic_params, raw_lidar_cloud_, INTENSITY, false, depth_projection_img);
-
-    cv::Mat merge_img = image_.clone();
-    for (int x = 0; x < merge_img.cols; x++)
-    {
-        for (int y = 0; y < merge_img.rows; y++)
-        {
-            uint8_t r, g, b;
-            float norm = depth_projection_img.at<uchar>(y, x) / 256.0;
-            if (norm > 0)
-            {
-                mapJet(norm, 0, 1, r, g, b);//????intensity????¶¡??????
-                merge_img.at<cv::Vec3b>(y, x)[0] = b;
-                merge_img.at<cv::Vec3b>(y, x)[1] = g;
-                merge_img.at<cv::Vec3b>(y, x)[2] = r;
-            }
-        }
-    }
-    return merge_img;
+    //projection(extrinsic_params, raw_lidar_cloud_, INTENSITY, false, depth_projection_img);
+    depth_projection_img=Proj2Img(image_, raw_lidar_cloud_,1, extrinsic_params, fx_ ,fy_ ,cx_ ,cy_,k1_ ,k2_,p1_,p2_,k3_ ,0);
+    // cv::Mat merge_img = image_.clone();
+    // for (int x = 0; x < merge_img.cols; x++)
+    // {
+    //     for (int y = 0; y < merge_img.rows; y++)
+    //     {
+    //         uint8_t r, g, b;
+    //         float norm = depth_projection_img.at<uchar>(y, x) / 256.0;
+    //         if (norm > 0)
+    //         {
+    //             mapJet(norm, 0, 1, r, g, b);//????intensity????¶¡??????
+    //             merge_img.at<cv::Vec3b>(y, x)[0] = b;
+    //             merge_img.at<cv::Vec3b>(y, x)[1] = g;
+    //             merge_img.at<cv::Vec3b>(y, x)[2] = r;
+    //         }
+    //     }
+    // }
+    // return merge_img;
+    return depth_projection_img;
 }
 
 // cv::Mat Calibration::getProjectionImg(const Vector6d &extrinsic_params)
