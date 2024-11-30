@@ -350,10 +350,10 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
   /usr/include/eigen3/Eigen/SVD \
   /usr/include/eigen3/Eigen/QR \
   /usr/include/eigen3/Eigen/Cholesky \
-  /usr/include/eigen3/Eigen/src/Cholesky/LLT.h \
-  /usr/include/eigen3/Eigen/src/Cholesky/LDLT.h \
   /usr/include/eigen3/Eigen/Jacobi \
   /usr/include/eigen3/Eigen/src/Jacobi/Jacobi.h \
+  /usr/include/eigen3/Eigen/src/Cholesky/LLT.h \
+  /usr/include/eigen3/Eigen/src/Cholesky/LDLT.h \
   /usr/include/eigen3/Eigen/Householder \
   /usr/include/eigen3/Eigen/src/Householder/Householder.h \
   /usr/include/eigen3/Eigen/src/Householder/HouseholderSequence.h \
@@ -1901,14 +1901,9 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
   /usr/local/include/ceres/ceres.h \
   /usr/local/include/ceres/autodiff_cost_function.h \
   /usr/local/include/ceres/internal/autodiff.h \
-  /usr/local/include/ceres/jet.h \
-  /usr/local/include/ceres/fpclassify.h \
-  /usr/local/include/ceres/internal/port.h \
-  /usr/local/include/ceres/internal/config.h \
-  /usr/local/include/ceres/internal/eigen.h \
+  /usr/local/include/ceres/internal/array_selector.h \
   /usr/local/include/ceres/internal/fixed_array.h \
-  /usr/local/include/ceres/internal/macros.h \
-  /usr/local/include/ceres/internal/manual_constructor.h \
+  /usr/local/include/ceres/internal/memory.h \
   /usr/include/glog/logging.h \
   /usr/include/inttypes.h \
   /usr/include/gflags/gflags.h \
@@ -1916,21 +1911,38 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
   /usr/include/gflags/gflags_gflags.h \
   /usr/include/glog/log_severity.h \
   /usr/include/glog/vlog_is_on.h \
-  /usr/local/include/ceres/internal/variadic_evaluate.h \
   /usr/local/include/ceres/types.h \
   /usr/local/include/ceres/internal/disable_warnings.h \
+  /usr/local/include/ceres/internal/export.h \
   /usr/local/include/ceres/internal/reenable_warnings.h \
-  /usr/local/include/ceres/internal/scoped_ptr.h \
-  /usr/local/include/ceres/sized_cost_function.h \
+  /usr/local/include/ceres/internal/eigen.h \
+  /usr/local/include/ceres/internal/parameter_dims.h \
+  /usr/local/include/ceres/internal/integer_sequence_algorithm.h \
+  /usr/local/include/ceres/jet_fwd.h \
+  /usr/local/include/ceres/internal/variadic_evaluate.h \
   /usr/local/include/ceres/cost_function.h \
-  /usr/local/include/ceres/autodiff_local_parameterization.h \
-  /usr/local/include/ceres/local_parameterization.h \
-  /usr/local/include/ceres/cost_function_to_functor.h \
+  /usr/local/include/ceres/jet.h \
   /usr/include/c++/9/numeric \
   /usr/include/c++/9/bits/stl_numeric.h \
+  /usr/local/include/ceres/internal/jet_traits.h \
+  /usr/local/include/ceres/internal/port.h \
+  /usr/local/include/ceres/sized_cost_function.h \
+  /usr/local/include/ceres/internal/parameter_dims.h \
+  /usr/local/include/ceres/autodiff_first_order_function.h \
+  /usr/local/include/ceres/first_order_function.h \
+  /usr/local/include/ceres/autodiff_local_parameterization.h \
+  /usr/local/include/ceres/local_parameterization.h \
+  /usr/local/include/ceres/internal/line_parameterization.h \
+  /usr/local/include/ceres/internal/householder_vector.h \
+  /usr/local/include/ceres/autodiff_manifold.h \
+  /usr/local/include/ceres/manifold.h \
+  /usr/local/include/ceres/conditioned_cost_function.h \
+  /usr/local/include/ceres/context.h \
+  /usr/local/include/ceres/cost_function_to_functor.h \
   /usr/local/include/ceres/dynamic_cost_function_to_functor.h \
   /usr/local/include/ceres/dynamic_cost_function.h \
   /usr/local/include/ceres/covariance.h \
+  /usr/local/include/ceres/internal/config.h \
   /usr/local/include/ceres/crs_matrix.h \
   /usr/local/include/ceres/dynamic_autodiff_cost_function.h \
   /usr/local/include/ceres/dynamic_numeric_diff_cost_function.h \
@@ -1955,22 +1967,30 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
   /usr/include/eigen3/Eigen/src/Eigenvalues/RealQZ.h \
   /usr/include/eigen3/Eigen/src/Eigenvalues/MatrixBaseEigenvalues.h \
   /usr/local/include/ceres/numeric_diff_options.h \
+  /usr/local/include/ceres/evaluation_callback.h \
+  /usr/local/include/ceres/gradient_checker.h \
   /usr/local/include/ceres/gradient_problem.h \
   /usr/local/include/ceres/gradient_problem_solver.h \
   /usr/local/include/ceres/iteration_callback.h \
+  /usr/local/include/ceres/line_manifold.h \
+  /usr/local/include/ceres/internal/householder_vector.h \
+  /usr/local/include/ceres/internal/sphere_manifold_functions.h \
   /usr/local/include/ceres/loss_function.h \
   /usr/local/include/ceres/numeric_diff_cost_function.h \
+  /usr/local/include/ceres/numeric_diff_first_order_function.h \
   /usr/local/include/ceres/ordered_groups.h \
-  /usr/local/include/ceres/problem.h \
-  /usr/local/include/ceres/context.h \
-  /usr/local/include/ceres/solver.h \
-  /usr/local/include/ceres/evaluation_callback.h \
-  /usr/local/include/ceres/version.h \
-  ../include/common.h \
   /usr/include/c++/9/unordered_map \
   /usr/include/c++/9/bits/hashtable.h \
   /usr/include/c++/9/bits/hashtable_policy.h \
   /usr/include/c++/9/bits/unordered_map.h \
+  /usr/local/include/ceres/problem.h \
+  /usr/local/include/ceres/product_manifold.h \
+  /usr/local/include/ceres/solver.h \
+  /usr/include/c++/9/unordered_set \
+  /usr/include/c++/9/bits/unordered_set.h \
+  /usr/local/include/ceres/sphere_manifold.h \
+  /usr/local/include/ceres/version.h \
+  ../include/common.h \
   /usr/include/opencv2/opencv.hpp \
   /usr/include/opencv2/opencv_modules.hpp \
   /usr/include/opencv2/core.hpp \
@@ -2471,10 +2491,15 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
   /usr/include/pcl-1.8/pcl/sample_consensus/sac_model_plane.h \
   /usr/include/pcl-1.8/pcl/segmentation/sac_segmentation.h \
   /usr/include/pcl-1.8/pcl/sample_consensus/method_types.h \
-  ../include/cluster.h \
+  ../include/adapt-cluster.h \
   /usr/include/pcl-1.8/pcl/segmentation/extract_clusters.h \
   /usr/include/pcl-1.8/pcl/common/common.h \
   /usr/include/pcl-1.8/pcl/common/impl/common.hpp \
+  ../include/scanline-cluster.h \
+  /usr/include/c++/9/forward_list \
+  /usr/include/c++/9/bits/forward_list.h \
+  /usr/include/c++/9/bits/forward_list.tcc \
+  ../include/groundremove.h \
   ../include/loadconfig.h \
   ../include/project.h \
   /usr/include/opencv2/core/eigen.hpp \
@@ -2486,6 +2511,12 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/opencv2/calib3d/calib3d.hpp:
 
 ../include/project.h:
+
+../include/groundremove.h:
+
+/usr/include/c++/9/bits/forward_list.h:
+
+/usr/include/c++/9/forward_list:
 
 /usr/include/pcl-1.8/pcl/common/impl/common.hpp:
 
@@ -2613,6 +2644,22 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/pcl-1.8/pcl/filters/boost.h:
 
+/usr/include/pcl-1.8/pcl/filters/filter_indices.h:
+
+/usr/include/pcl-1.8/pcl/filters/extract_indices.h:
+
+/usr/include/pcl-1.8/pcl/features/eigen.h:
+
+/usr/include/pcl-1.8/pcl/features/principal_curvatures.h:
+
+/usr/include/boost/fusion/container/vector/detail/distance_impl.hpp:
+
+/usr/include/boost/fusion/container/vector/detail/next_impl.hpp:
+
+/usr/include/boost/fusion/container/vector/detail/value_of_impl.hpp:
+
+/usr/include/boost/fusion/container/vector/vector_iterator.hpp:
+
 /usr/include/boost/numeric/conversion/detail/preprocessed/numeric_cast_traits_long_long.hpp:
 
 /usr/include/unistd.h:
@@ -2620,8 +2667,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/numeric/conversion/detail/preprocessed/numeric_cast_traits_common.hpp:
 
 /usr/include/pcl-1.8/pcl/features/normal_3d.h:
-
-/usr/include/pcl-1.8/pcl/filters/filter_indices.h:
 
 /usr/include/boost/numeric/conversion/detail/bounds.hpp:
 
@@ -2737,8 +2782,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/date_time/date_duration_types.hpp:
 
-/usr/include/boost/preprocessor/repetition/detail/for.hpp:
-
 /usr/include/boost/type_traits/has_complement.hpp:
 
 /usr/include/boost/type_traits/has_bit_xor.hpp:
@@ -2831,6 +2874,10 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/mpl/aux_/preprocessed/gcc/equal_to.hpp:
 
+/usr/include/pcl-1.8/pcl/common/impl/centroid.hpp:
+
+/usr/include/c++/9/bits/stl_stack.h:
+
 /usr/include/boost/preprocessor/enum_shifted_params.hpp:
 
 /usr/include/boost/mpl/advance_fwd.hpp:
@@ -2854,8 +2901,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/eigen3/Eigen/src/Eigenvalues/SelfAdjointEigenSolver.h:
 
 /usr/include/boost/mpl/aux_/preprocessed/gcc/minus.hpp:
-
-../include/cluster.h:
 
 /usr/include/boost/mpl/vector/aux_/back.hpp:
 
@@ -2938,6 +2983,8 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/type_traits/detail/config.hpp:
 
 /usr/include/boost/utility/enable_if.hpp:
+
+/usr/include/c++/9/unordered_set:
 
 /usr/include/boost/type_traits/add_const.hpp:
 
@@ -3037,6 +3084,12 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/mpl/logical.hpp:
 
+/usr/include/boost/fusion/container/vector/detail/advance_impl.hpp:
+
+/usr/include/boost/type_traits/make_unsigned.hpp:
+
+/usr/include/boost/mpl/aux_/iter_apply.hpp:
+
 /usr/include/boost/numeric/conversion/converter_policies.hpp:
 
 /usr/include/boost/type_traits/is_union.hpp:
@@ -3062,8 +3115,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/range/iterator_range_core.hpp:
 
 /usr/include/boost/signals2/last_value.hpp:
-
-/usr/include/boost/mpl/aux_/has_apply.hpp:
 
 /usr/include/boost/variant/variant_fwd.hpp:
 
@@ -3391,6 +3442,8 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/smart_ptr/detail/operator_bool.hpp:
 
+/usr/include/c++/9/bits/unordered_set.h:
+
 /usr/include/boost/mpl/aux_/arg_typedef.hpp:
 
 /usr/include/boost/preprocessor/arithmetic/add.hpp:
@@ -3487,6 +3540,8 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/mpl/remove_if.hpp:
 
+/usr/local/include/ceres/internal/parameter_dims.h:
+
 /usr/include/boost/mpl/filter_view.hpp:
 
 /usr/include/c++/9/climits:
@@ -3544,10 +3599,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/numeric/conversion/sign_mixture_enum.hpp:
 
 /usr/include/x86_64-linux-gnu/bits/endian.h:
-
-/usr/include/c++/9/array:
-
-/usr/include/x86_64-linux-gnu/gnu/stubs.h:
 
 /usr/include/opencv2/core/eigen.hpp:
 
@@ -3715,6 +3766,8 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/stdlib.h:
 
+/usr/include/opencv2/core/affine.hpp:
+
 /usr/include/c++/9/string:
 
 /usr/include/eigen3/Eigen/src/Geometry/Homogeneous.h:
@@ -3730,8 +3783,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/mpl/inherit.hpp:
 
 /usr/include/boost/mpl/next_prior.hpp:
-
-/usr/include/eigen3/Eigen/src/Cholesky/LLT.h:
 
 /usr/include/c++/9/ext/new_allocator.h:
 
@@ -3844,8 +3895,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/interprocess/errors.hpp:
 
 /usr/include/eigen3/Eigen/src/plugins/MatrixCwiseUnaryOps.h:
-
-/usr/include/boost/lexical_cast/bad_lexical_cast.hpp:
 
 /usr/include/boost/fusion/support/is_sequence.hpp:
 
@@ -4123,10 +4172,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/type_traits/add_pointer.hpp:
 
-/usr/include/c++/9/bits/stl_stack.h:
-
-/usr/include/pcl-1.8/pcl/common/impl/centroid.hpp:
-
 /usr/include/x86_64-linux-gnu/bits/sys_errlist.h:
 
 /usr/include/x86_64-linux-gnu/sys/cdefs.h:
@@ -4219,6 +4264,8 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/mpl/has_key.hpp:
 
+../include/scanline-cluster.h:
+
 /usr/include/x86_64-linux-gnu/bits/floatn-common.h:
 
 /usr/include/x86_64-linux-gnu/bits/setjmp.h:
@@ -4277,6 +4324,10 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/local_lim.h:
 
+/usr/include/x86_64-linux-gnu/gnu/stubs.h:
+
+/usr/local/include/ceres/conditioned_cost_function.h:
+
 /usr/include/boost/mpl/aux_/reverse_fold_impl.hpp:
 
 /usr/include/flann/algorithms/autotuned_index.h:
@@ -4284,6 +4335,10 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/predef/architecture/arm.h:
 
 /usr/include/pcl-1.8/pcl/pcl_base.h:
+
+/usr/include/boost/fusion/container/vector/detail/equal_to_impl.hpp:
+
+/usr/include/c++/9/new:
 
 /usr/include/boost/thread/futures/wait_for_all.hpp:
 
@@ -4475,8 +4530,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/flann/util/logger.h:
 
-/usr/include/eigen3/Eigen/src/Core/CommaInitializer.h:
-
 /usr/include/opencv2/imgproc/types_c.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/9/include/emmintrin.h:
@@ -4545,13 +4598,15 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/mpl/comparison.hpp:
 
-/usr/include/boost/fusion/container/vector/detail/distance_impl.hpp:
-
 /usr/include/eigen3/Eigen/src/Core/util/ForwardDeclarations.h:
 
 /usr/include/boost/smart_ptr/detail/sp_disable_deprecated.hpp:
 
 /usr/include/boost/thread/barrier.hpp:
+
+/usr/include/boost/preprocessor/repetition/detail/for.hpp:
+
+/usr/local/include/ceres/internal/jet_traits.h:
 
 /usr/include/c++/9/bits/locale_facets.tcc:
 
@@ -4685,6 +4740,10 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/mpl/void_fwd.hpp:
 
+/usr/include/eigen3/Eigen/src/Core/CommaInitializer.h:
+
+/usr/local/include/ceres/jet_fwd.h:
+
 /usr/include/eigen3/Eigen/src/Core/DenseCoeffsBase.h:
 
 /usr/include/boost/smart_ptr/detail/sp_counted_base_std_atomic.hpp:
@@ -4792,6 +4851,8 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/eigen3/Eigen/src/Core/util/Constants.h:
 
 /usr/include/x86_64-linux-gnu/bits/stdio_lim.h:
+
+/usr/include/c++/9/bits/forward_list.tcc:
 
 /usr/include/boost/bind/arg.hpp:
 
@@ -5177,6 +5238,8 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/predef/detail/os_detected.h:
 
+../include/adapt-cluster.h:
+
 /usr/include/boost/predef/compiler/sunpro.h:
 
 /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h:
@@ -5237,6 +5300,10 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/fusion/adapted/mpl/detail/is_view_impl.hpp:
 
+/usr/include/boost/fusion/container/vector/detail/deref_impl.hpp:
+
+/usr/include/boost/atomic/detail/type_traits/is_function.hpp:
+
 /usr/include/boost/mpl/aux_/fold_impl.hpp:
 
 /usr/include/boost/predef/architecture/z.h:
@@ -5270,6 +5337,10 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/integer.hpp:
 
 /usr/include/eigen3/Eigen/src/Core/products/TriangularSolverVector.h:
+
+/usr/include/eigen3/Eigen/src/Cholesky/LLT.h:
+
+/usr/local/include/ceres/internal/householder_vector.h:
 
 /usr/include/boost/mpl/vector/aux_/preprocessed/typeof_based/vector20.hpp:
 
@@ -5378,6 +5449,8 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/concept/detail/concept_def.hpp:
 
 /usr/include/boost/chrono/detail/scan_keyword.hpp:
+
+/usr/local/include/ceres/internal/export.h:
 
 /usr/include/boost/cerrno.hpp:
 
@@ -5579,8 +5652,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/pcl-1.8/pcl/impl/cloud_iterator.hpp:
 
-/usr/include/boost/algorithm/string/detail/find_iterator.hpp:
-
 /usr/include/boost/chrono/clock_string.hpp:
 
 /usr/include/boost/thread/condition_variable.hpp:
@@ -5715,10 +5786,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/thread/once.hpp:
 
-/usr/include/opencv2/core/affine.hpp:
-
-/usr/local/include/ceres/internal/macros.h:
-
 /usr/include/boost/atomic/capabilities.hpp:
 
 /usr/include/boost/atomic/detail/ops_gcc_atomic.hpp:
@@ -5737,6 +5804,10 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/atomic/detail/lockpool.hpp:
 
+/usr/include/boost/fusion/container/vector/detail/convert_impl.hpp:
+
+/usr/include/boost/atomic/detail/link.hpp:
+
 /usr/include/boost/atomic/atomic_flag.hpp:
 
 /usr/include/boost/atomic/detail/atomic_template.hpp:
@@ -5751,9 +5822,15 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/thread/tss.hpp:
 
+/usr/local/include/ceres/product_manifold.h:
+
 /usr/include/boost/fusion/algorithm/transformation/push_front.hpp:
 
 /usr/include/boost/thread/locks.hpp:
+
+/usr/include/boost/lexical_cast/bad_lexical_cast.hpp:
+
+/usr/local/include/ceres/autodiff_manifold.h:
 
 /usr/include/boost/lexical_cast/detail/converter_lexical.hpp:
 
@@ -5786,6 +5863,8 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/iostreams/detail/streambuf.hpp:
 
 /usr/include/boost/preprocessor/slot/detail/def.hpp:
+
+/usr/local/include/ceres/internal/sphere_manifold_functions.h:
 
 /usr/include/boost/preprocessor/facilities/intercept.hpp:
 
@@ -5856,8 +5935,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/eigen3/Eigen/src/Core/GlobalFunctions.h:
 
 /usr/include/boost/exception/detail/shared_ptr.hpp:
-
-/usr/include/boost/fusion/container/vector/detail/value_of_impl.hpp:
 
 /usr/include/pcl-1.8/pcl/kdtree/flann.h:
 
@@ -6042,6 +6119,8 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/preprocessor/seq/transform.hpp:
 
 /usr/include/boost/mpl/aux_/iter_fold_impl.hpp:
+
+/usr/local/include/ceres/line_manifold.h:
 
 /usr/include/boost/algorithm/string/find_iterator.hpp:
 
@@ -6256,6 +6335,10 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/predef/compiler/ibm.h:
 
 /usr/include/boost/mpl/less_equal.hpp:
+
+/usr/include/boost/mpl/aux_/has_apply.hpp:
+
+/usr/local/include/ceres/autodiff_first_order_function.h:
 
 /usr/include/boost/math/special_functions/detail/fp_traits.hpp:
 
@@ -6539,6 +6622,12 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/move/algorithm.hpp:
 
+/usr/include/boost/fusion/container/vector/detail/begin_impl.hpp:
+
+/usr/include/opencv2/core/optim.hpp:
+
+/usr/include/boost/move/algo/move.hpp:
+
 /usr/include/boost/move/detail/iterator_to_raw_pointer.hpp:
 
 /usr/include/boost/signals2/detail/slot_call_iterator.hpp:
@@ -6599,6 +6688,12 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/signals2/detail/slot_template.hpp:
 
+/usr/include/boost/fusion/container/vector/detail/end_impl.hpp:
+
+/usr/include/boost/algorithm/string/detail/classification.hpp:
+
+/usr/include/boost/signals2/detail/replace_slot_function.hpp:
+
 /usr/include/boost/signals2/detail/result_type_wrapper.hpp:
 
 /usr/include/eigen3/Eigen/src/Core/Ref.h:
@@ -6606,10 +6701,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/signals2/detail/slot_groups.hpp:
 
 /usr/include/boost/signals2/optional_last_value.hpp:
-
-/usr/include/boost/atomic/detail/type_traits/is_function.hpp:
-
-/usr/include/boost/fusion/container/vector/detail/deref_impl.hpp:
 
 /usr/include/boost/algorithm/string/sequence_traits.hpp:
 
@@ -6733,6 +6824,8 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/preprocessor/detail/split.hpp:
 
+/usr/local/include/ceres/internal/array_selector.h:
+
 /usr/include/boost/preprocessor/facilities/is_empty.hpp:
 
 /usr/include/boost/preprocessor/punctuation/is_begin_parens.hpp:
@@ -6785,25 +6878,11 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/local/include/ceres/internal/autodiff.h:
 
-/usr/include/boost/type_traits/is_float.hpp:
-
-/usr/local/include/ceres/jet.h:
-
-/usr/local/include/ceres/fpclassify.h:
-
-/usr/include/boost/random/weibull_distribution.hpp:
-
-/usr/local/include/ceres/internal/port.h:
-
-/usr/local/include/ceres/internal/eigen.h:
-
 /usr/local/include/ceres/internal/fixed_array.h:
 
-/usr/local/include/ceres/internal/manual_constructor.h:
+/usr/local/include/ceres/internal/memory.h:
 
-/usr/include/c++/9/iosfwd:
-
-/usr/include/boost/fusion/iterator/iterator_adapter.hpp:
+/usr/include/boost/fusion/sequence/intrinsic/detail/segmented_end.hpp:
 
 /usr/include/boost/type_traits/is_constructible.hpp:
 
@@ -6815,9 +6894,15 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/local/include/ceres/internal/reenable_warnings.h:
 
-/usr/local/include/ceres/internal/scoped_ptr.h:
+/usr/local/include/ceres/internal/eigen.h:
 
-/usr/local/include/ceres/local_parameterization.h:
+/usr/local/include/ceres/internal/integer_sequence_algorithm.h:
+
+/usr/include/lz4hc.h:
+
+/usr/include/boost/type_traits/is_float.hpp:
+
+/usr/local/include/ceres/jet.h:
 
 /usr/include/pcl-1.8/pcl/octree/octree_search.h:
 
@@ -6826,6 +6911,20 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/exception/diagnostic_information.hpp:
 
 /usr/include/c++/9/bits/stl_numeric.h:
+
+/usr/include/boost/random/weibull_distribution.hpp:
+
+/usr/local/include/ceres/internal/port.h:
+
+/usr/include/c++/9/array:
+
+/usr/local/include/ceres/first_order_function.h:
+
+/usr/local/include/ceres/local_parameterization.h:
+
+/usr/local/include/ceres/manifold.h:
+
+/usr/local/include/ceres/context.h:
 
 /usr/include/boost/mpl/pop_back_fwd.hpp:
 
@@ -6845,11 +6944,27 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/eigen3/Eigen/src/Eigenvalues/EigenSolver.h:
 
+/usr/local/include/ceres/evaluation_callback.h:
+
+/usr/include/boost/algorithm/string/detail/find_iterator.hpp:
+
+/usr/local/include/ceres/gradient_checker.h:
+
 /usr/local/include/ceres/gradient_problem_solver.h:
 
 /usr/local/include/ceres/iteration_callback.h:
 
-/usr/local/include/ceres/context.h:
+/usr/local/include/ceres/numeric_diff_first_order_function.h:
+
+/usr/include/boost/parameter/keyword.hpp:
+
+/usr/include/flann/algorithms/all_indices.h:
+
+/usr/include/c++/9/unordered_map:
+
+/usr/include/boost/predef/architecture.h:
+
+/usr/include/c++/9/bits/unordered_map.h:
 
 /usr/include/boost/mpl/aux_/include_preprocessed.hpp:
 
@@ -6857,13 +6972,7 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/local/include/ceres/solver.h:
 
-/usr/local/include/ceres/evaluation_callback.h:
-
-/usr/include/c++/9/unordered_map:
-
-/usr/include/boost/predef/architecture.h:
-
-/usr/include/c++/9/bits/unordered_map.h:
+/usr/local/include/ceres/sphere_manifold.h:
 
 /usr/include/boost/mpl/size.hpp:
 
@@ -6883,15 +6992,7 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/fusion/algorithm/iteration/for_each.hpp:
 
-/usr/include/pcl-1.8/pcl/features/principal_curvatures.h:
-
 /usr/include/opencv2/core/mat.hpp:
-
-/usr/include/opencv2/core/optim.hpp:
-
-/usr/include/boost/move/algo/move.hpp:
-
-/usr/include/boost/fusion/container/vector/detail/begin_impl.hpp:
 
 /usr/include/opencv2/core/mat.inl.hpp:
 
@@ -7055,8 +7156,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/flann/util/serialization.h:
 
-/usr/include/lz4hc.h:
-
 /usr/include/boost/detail/select_type.hpp:
 
 /usr/include/boost/fusion/container/vector/convert.hpp:
@@ -7080,10 +7179,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/chrono/include.hpp:
 
 /usr/include/boost/fusion/iterator/detail/segmented_equal_to.hpp:
-
-/usr/include/boost/parameter/keyword.hpp:
-
-/usr/include/flann/algorithms/all_indices.h:
 
 /usr/include/flann/algorithms/nn_index.h:
 
@@ -7153,8 +7248,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/fusion/support/detail/category_of.hpp:
 
-/usr/include/boost/fusion/container/vector/vector_iterator.hpp:
-
 /usr/include/boost/fusion/adapted/mpl/detail/end_impl.hpp:
 
 /usr/include/boost/fusion/adapted/mpl/detail/is_sequence_impl.hpp:
@@ -7192,8 +7285,6 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/fusion/sequence/intrinsic/value_at.hpp:
 
 /usr/include/boost/fusion/sequence/intrinsic/end.hpp:
-
-/usr/include/boost/fusion/sequence/intrinsic/detail/segmented_end.hpp:
 
 /usr/include/boost/fusion/iterator/segmented_iterator.hpp:
 
@@ -7245,9 +7336,7 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/fusion/support/detail/is_view.hpp:
 
-/usr/include/boost/atomic/detail/link.hpp:
-
-/usr/include/boost/fusion/container/vector/detail/convert_impl.hpp:
+/usr/local/include/ceres/internal/line_parameterization.h:
 
 /usr/include/boost/fusion/sequence/intrinsic/size.hpp:
 
@@ -7359,6 +7448,10 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 
 /usr/include/boost/fusion/algorithm/transformation/pop_back.hpp:
 
+/usr/include/c++/9/iosfwd:
+
+/usr/include/boost/fusion/iterator/iterator_adapter.hpp:
+
 /usr/include/boost/fusion/mpl/pop_front.hpp:
 
 /usr/include/boost/mpl/pop_front.hpp:
@@ -7386,25 +7479,3 @@ CMakeFiles/calib.dir/src/ssl_fe.cpp.o: ../src/ssl_fe.cpp \
 /usr/include/boost/fusion/container/vector/detail/as_vector.hpp:
 
 /usr/include/boost/fusion/container/vector/detail/at_impl.hpp:
-
-/usr/include/boost/fusion/container/vector/detail/next_impl.hpp:
-
-/usr/include/c++/9/new:
-
-/usr/include/boost/fusion/container/vector/detail/equal_to_impl.hpp:
-
-/usr/include/boost/type_traits/make_unsigned.hpp:
-
-/usr/include/boost/mpl/aux_/iter_apply.hpp:
-
-/usr/include/boost/fusion/container/vector/detail/advance_impl.hpp:
-
-/usr/include/boost/algorithm/string/detail/classification.hpp:
-
-/usr/include/boost/signals2/detail/replace_slot_function.hpp:
-
-/usr/include/boost/fusion/container/vector/detail/end_impl.hpp:
-
-/usr/include/pcl-1.8/pcl/features/eigen.h:
-
-/usr/include/pcl-1.8/pcl/filters/extract_indices.h:

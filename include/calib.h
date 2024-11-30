@@ -20,9 +20,10 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/ModelCoefficients.h>
-#include "cluster.h"
+#include "adapt-cluster.h"
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
+#include"scanline-cluster.h"
 #include <pcl/segmentation/sac_segmentation.h>
 #include <opencv2/core.hpp>
 #include <vector>
@@ -1465,10 +1466,91 @@ void Calibration::euclideanClusterSegmentation(pcl::PointCloud<pcl::PointXYZI>::
     }
 }
 
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr processClustersWithBoundingBoxes(
+    const std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, 
+                       Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>>& clusters,
+    float sampling_density = 100.0f // 每单位长度的采样点数
+) 
+{
+    // 创建合成结果的点云
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr result_cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+
+    // 遍历所有聚类
+    for (const auto& cluster : clusters) {
+        // 添加当前聚类到结果点云
+        *result_cloud += *cluster;
+
+        // 计算最小外接长方体 (AABB)
+        pcl::PointXYZRGB min_point, max_point;
+        pcl::getMinMax3D(*cluster, min_point, max_point);
+
+        // 创建用于表示长方体的点云
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr bounding_box_cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+
+        // 创建蓝色点用于边框
+        pcl::PointXYZRGB blue_point;
+        blue_point.r = 0;
+        blue_point.g = 0;
+        blue_point.b = 255;
+
+        // AABB 的 8 个顶点
+        for (int i = 0; i < 8; ++i) {
+            pcl::PointXYZRGB pt = blue_point;
+            pt.x = (i & 1) ? max_point.x : min_point.x;
+            pt.y = (i & 2) ? max_point.y : min_point.y;
+            pt.z = (i & 4) ? max_point.z : min_point.z;
+            bounding_box_cloud->points.push_back(pt);
+        }
+
+        // 连接顶点生成长方体边框
+        int edges[12][2] = {
+            {0, 1}, {1, 3}, {3, 2}, {2, 0}, // Bottom face
+            {4, 5}, {5, 7}, {7, 6}, {6, 4}, // Top face
+            {0, 4}, {1, 5}, {2, 6}, {3, 7}  // Vertical edges
+        };
+
+        for (const auto& edge : edges) {
+            pcl::PointXYZRGB start = bounding_box_cloud->points[edge[0]];
+            pcl::PointXYZRGB end = bounding_box_cloud->points[edge[1]];
+
+            // 计算边的长度
+            float length = std::sqrt(
+                std::pow(end.x - start.x, 2) +
+                std::pow(end.y - start.y, 2) +
+                std::pow(end.z - start.z, 2));
+
+            // 根据采样密度计算采样点数
+            int num_samples = static_cast<int>(std::ceil(length * sampling_density));
+
+            // 生成边界线段插值点
+            for (int j = 0; j <= num_samples; ++j) {
+                float alpha = static_cast<float>(j) / num_samples;
+                pcl::PointXYZRGB interpolated = blue_point;
+                interpolated.x = start.x + alpha * (end.x - start.x);
+                interpolated.y = start.y + alpha * (end.y - start.y);
+                interpolated.z = start.z + alpha * (end.z - start.z);
+                result_cloud->points.push_back(interpolated);
+            }
+        }
+    }
+
+    return result_cloud;
+}
+
+
 void Calibration::detectTarget(pcl::PointCloud<pcl::PointXYZI>::Ptr& input_cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& output_cloud) {
     // 创建平面分割对象
-        std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>> clusters;
-    pointCloudcluster(input_cloud,clusters);
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>> clusters;
+    
+    //scanline method
+    ScanLineRun slr;
+    slr.process_pointcloud(input_cloud,clusters);
+
+    //adapt method
+    //pointCloudcluster(input_cloud,clusters);
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cluster_cloud=processClustersWithBoundingBoxes(clusters);
+    pcl::io::savePCDFileASCII("check/" + std::to_string(dataProcessingNum) + "_targets.pcd", *cluster_cloud);
     int id=0;
 for(int i=0;i<clusters.size();i++){
         if (clusters[i]->points.size() > 10)
@@ -1575,10 +1657,16 @@ for(int i=0;i<clusters.size();i++){
             double dis1 =abs((center-center1).dot(plane_list[0].normal));
             double dis2 =abs((center-center2).dot(plane_list[1].normal));
             double dis3 =abs((center-center3).dot(plane_list[2].normal));
-            if(abs(plane_list[0].normal.dot(plane_list[1].normal))<0.1&&abs(plane_list[2].normal.dot(plane_list[1].normal))<0.1&&abs(dis1-dis2)<0.05&&abs(dis1-dis3)<0.05)
+            if(abs(plane_list[0].normal.dot(plane_list[1].normal))<0.1&&
+            abs(plane_list[2].normal.dot(plane_list[1].normal))<0.1&&
+            abs(plane_list[0].normal.dot(plane_list[2].normal))<0.1)
             {
                 id=i;
                 cout<<"find target"<<endl;
+            }
+            else
+            {
+                cout<<"error: no target"<<endl;
             }
         }
         }
